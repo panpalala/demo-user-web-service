@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+	<!-- 引入cxf框架的配置文件 -->
+	<import resource="classpath:cxf.xml"/>
+	
+	<!-- 配置自动扫描 -->
+	<context:component-scan base-package="com.atguigu.demo.user.service"/>
+	
+	<!-- 引入配置数据源的属性文件 -->
+	<context:property-placeholder location="classpath:jdbc.properties"/>
+	
+	<!-- 配置c3p0数据源 -->
+	<bean id="comboPooledDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+		<property name="driverClass" value="${jdbc.driver}"/>
+		<property name="jdbcUrl" value="${jdbc.url}"/>
+	</bean>
+	
+	<!-- 配置SqlSessionFactoryBean -->
+	<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="comboPooledDataSource"/>
+		<!-- 指定mybatisconfig配置文件的位置 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+		<!-- 指定mapper.xml文件的位置，若mapper接口和mapper.xml在同一个目录下则不用配置mapperscannerConfigurer -->
+<!-- 		<property name="mapperLocations" value="com.atguigu.demo.user.mapper"/> -->
+	</bean>
+	
+	<bean id="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.atguigu.demo.user.mapper"/>
+	</bean>
+	
+	<!-- 配置基于注解声明式事务 -->
+	<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="comboPooledDataSource"></property>
+	</bean>
+	
+	<!-- 开启基于注解的事务功能 -->
+	<tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
+	
+	<!-- 配置webservice的访问路径 --> 
+	<jaxrs:server id="jaxServer" address="/remote">
+		<jaxrs:serviceBeans>
+			<bean class="com.atguigu.demo.user.webservice.UserWebService"></bean>
+		</jaxrs:serviceBeans>
+	</jaxrs:server>
+	
+	
+</beans>
